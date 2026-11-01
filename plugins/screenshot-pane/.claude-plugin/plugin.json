@@ -1,0 +1,10 @@
+{
+  "name": "screenshot-pane",
+  "version": "0.1.0",
+  "description": "Shows screenshots and other images from tool calls in a side pane (kitty graphics: Ghostty, kitty)",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Greg Fong"
+  },
+  "license": "MIT"
+}

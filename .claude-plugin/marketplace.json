@@ -1,0 +1,39 @@
+{
+  "name": "greg-plugins",
+  "owner": { "name": "Greg Fong" },
+  "metadata": {
+    "description": "Small Claude Code plugins that change the terminal interface: usage, screenshots, PR links, a session plan, and a session picker."
+  },
+  "plugins": [
+    {
+      "name": "usage-footer",
+      "source": "./plugins/usage-footer",
+      "description": "Shows weekly and 5-hour plan usage on the right of the prompt footer row",
+      "category": "productivity"
+    },
+    {
+      "name": "screenshot-pane",
+      "source": "./plugins/screenshot-pane",
+      "description": "Shows screenshots and other images from tool calls in a side pane (kitty graphics: Ghostty, kitty)",
+      "category": "productivity"
+    },
+    {
+      "name": "pr-link",
+      "source": "./plugins/pr-link",
+      "description": "Shows a clickable link above the prompt for each PR that gh pr create opens in this session",
+      "category": "productivity"
+    },
+    {
+      "name": "session-plan",
+      "source": "./plugins/session-plan",
+      "description": "Keeps a high-level plan of the session (goal, done, now, next) in a toggleable side pane and the status line",
+      "category": "productivity"
+    },
+    {
+      "name": "session-picker",
+      "source": "./plugins/session-picker",
+      "description": "A pane of recent sessions in this directory, each one a button that resumes it",
+      "category": "productivity"
+    }
+  ]
+}

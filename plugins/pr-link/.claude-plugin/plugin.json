@@ -1,0 +1,10 @@
+{
+  "name": "pr-link",
+  "version": "0.1.0",
+  "description": "Shows a clickable link above the prompt for each PR that gh pr create opens in this session",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Greg Fong"
+  },
+  "license": "MIT"
+}

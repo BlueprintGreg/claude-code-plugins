@@ -1,0 +1,10 @@
+{
+  "name": "session-plan",
+  "version": "0.1.0",
+  "description": "Keeps a high-level plan of the session (goal, done, now, next) in a toggleable side pane and the status line",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Greg Fong"
+  },
+  "license": "MIT"
+}

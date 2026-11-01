@@ -1,0 +1,10 @@
+{
+  "name": "session-picker",
+  "version": "0.1.0",
+  "description": "A pane of recent sessions in this directory, each one a button that resumes it",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Greg Fong"
+  },
+  "license": "MIT"
+}

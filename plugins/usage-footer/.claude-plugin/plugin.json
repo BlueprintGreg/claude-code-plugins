@@ -1,0 +1,10 @@
+{
+  "name": "usage-footer",
+  "version": "0.1.0",
+  "description": "Shows weekly and 5-hour plan usage on the right of the prompt footer row",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Greg Fong"
+  },
+  "license": "MIT"
+}
