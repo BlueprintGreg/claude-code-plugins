@@ -20,7 +20,7 @@
     {
       "name": "pr-link",
       "source": "./plugins/pr-link",
-      "description": "Shows a clickable link above the prompt for each PR that gh pr create opens in this session",
+      "description": "Shows a clickable link above the prompt for each PR that gh pr create opens in this session, with a status circle for each PR",
       "category": "productivity"
     },
     {

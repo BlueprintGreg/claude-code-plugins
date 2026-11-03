@@ -7,7 +7,7 @@ a hooks module. No plugin adds a skill, an agent, or an MCP server.
 |--------|--------------|---------|
 | [usage-footer](plugins/usage-footer) | Shows the weekly and 5-hour plan usage on the right of the footer row. | None |
 | [screenshot-pane](plugins/screenshot-pane) | Shows PNG and JPEG files from tool calls in a side pane. | `/shots` |
-| [pr-link](plugins/pr-link) | Shows a link above the prompt for each PR that `gh pr create` opens. | None |
+| [pr-link](plugins/pr-link) | Shows a link and a status circle above the prompt for each PR that `gh pr create` opens. | None |
 | [session-plan](plugins/session-plan) | Keeps a short plan of the session (goal, now, next, done) in a side pane. | `/progress` |
 | [session-picker](plugins/session-picker) | Shows the recent sessions in this directory. Press a row to resume it. | `/sessions` |
 
@@ -50,6 +50,22 @@ after the first response. The color changes to yellow at 70% and to red at
 
 The band shows the three newest PRs. The **Clear** button empties the list.
 The list lasts for one session only.
+
+A circle in front of each PR shows its status. The plugin gets the status
+with `gh pr view`, so it needs the GitHub CLI, signed in.
+
+| Circle | Status |
+|--------|--------|
+| ● yellow | Open, waiting for review |
+| ● green | Approved |
+| ● red | Changes requested |
+| ● magenta | Merged |
+| ● gray | Closed without a merge |
+| ○ gray | Draft |
+| ● dim | Loading, or `gh` could not get the status |
+
+The plugin checks an open PR again every 2 minutes. It checks a merged or
+closed PR again every 30 minutes.
 
 ### session-plan
 

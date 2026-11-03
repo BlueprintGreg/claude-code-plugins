@@ -1,20 +1,16 @@
 import { atom, read, update } from 'claude-code'
-import type { Register } from 'claude-code'
+import type { EngineInterface, Register } from 'claude-code'
 
-import type { OpenedPr } from '../types'
+import type { OpenedPr, PrStatus } from '../types'
+import { findPrUrls, isFresh, prDot, prKey, toPrStatus } from './prs'
+
+export { findPrUrls } from './prs'
 
 const prs = atom({ plugin: 'pr-link', key: 'prs' } as const, [] as readonly OpenedPr[])
+const STATUS = { plugin: 'pr-link', key: 'status' } as const
 
 const CREATE = /\bgh\s+pr\s+create\b/
-const PR_URL = /https:\/\/github\.com\/([\w.-]+\/[\w.-]+)\/pull\/(\d+)/g
 const SHOWN = 3
-
-export const findPrUrls = (output: string): OpenedPr[] =>
-  [...output.matchAll(PR_URL)].map(m => ({
-    url: m[0],
-    repo: m[1] ?? '',
-    number: Number(m[2]),
-  }))
 
 const outputOf = (ran: { result?: unknown; text?: string }): string => {
   const result = ran.result as { stdout?: unknown; stderr?: unknown } | undefined
@@ -23,7 +19,70 @@ const outputOf = (ran: { result?: unknown; text?: string }): string => {
     .join('\n')
 }
 
+async function fetchStatus($: EngineInterface, pr: OpenedPr): Promise<PrStatus> {
+  const fetchedAt = Date.now()
+  try {
+    const ran = await $.process.run(
+      ['gh', 'pr', 'view', pr.url, '--json', 'state,isDraft,reviewDecision,title'],
+      { timeoutMs: 20_000 },
+    )
+    if (ran.exitCode === 0) {
+      return toPrStatus(ran.stdout, fetchedAt)
+    }
+
+    return { isFound: false, error: ran.stderr.trim().slice(0, 200), fetchedAt }
+  } catch (thrown) {
+    return { isFound: false, error: String(thrown).slice(0, 200), fetchedAt }
+  }
+}
+
+// Render hooks may not write state, so they only queue PRs here. A timer
+// started at session.start fetches the queue and writes each result.
+const wanted = new Map<string, OpenedPr>()
+const inFlight = new Set<string>()
+
+async function drain($: EngineInterface) {
+  for (const [key, pr] of [...wanted].slice(0, 3)) {
+    wanted.delete(key)
+    if (inFlight.has(key)) {
+      continue
+    }
+    inFlight.add(key)
+    try {
+      const { value } = await $.state.get({ ...STATUS, id: key })
+      if (!isFresh(value)) {
+        await $.state.set({ ...STATUS, id: key }, await fetchStatus($, pr))
+      }
+    } finally {
+      inFlight.delete(key)
+    }
+  }
+}
+
+// Reads each status (subscribing the drawing to it) and queues the ones that
+// are missing or stale for the timer to fetch.
+async function readStatuses($: EngineInterface, list: readonly OpenedPr[]) {
+  const statuses = await Promise.all(list.map(async pr => (await $.state.get({ ...STATUS, id: prKey(pr) })).value))
+  list.forEach((pr, index) => {
+    if (!isFresh(statuses[index])) {
+      wanted.set(prKey(pr), pr)
+    }
+  })
+
+  return statuses
+}
+
 export const register: Register = on => {
+  on('session.start', async ($, e, next) => {
+    $.clock.every(1000, () => {
+      if (wanted.size > 0) {
+        void drain($)
+      }
+    })
+
+    return next(e)
+  })
+
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     const ran = await next(e)
 
@@ -43,7 +102,8 @@ export const register: Register = on => {
   }).catch(($, e, next) => next(e))
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    const list = await read($, prs)
+    // An older version could store one URL twice, so drop repeats here too.
+    const list = (await read($, prs)).filter((pr, i, all) => all.findIndex(p => p.url === pr.url) === i)
 
     if (e.props.hasSurvey || list.length === 0) {
       return next(e)
@@ -52,17 +112,22 @@ export const register: Register = on => {
     const { Box, Button, Link, Text } = $.ui.resolve(e)
     const shown = list.slice(0, SHOWN)
     const hidden = list.length - shown.length
+    const statuses = await readStatuses($, shown)
 
     return (
       <Box flexDirection="row">
         <Text>
           <Text dimColor>{shown.length > 1 ? 'PRs opened: ' : 'PR opened: '}</Text>
-          {shown.map((pr, i) => (
-            <Text key={pr.url}>
-              {i > 0 ? <Text dimColor>, </Text> : null}
-              <Link href={pr.url}>{`${pr.repo}#${pr.number}`}</Link>
-            </Text>
-          ))}
+          {shown.map((pr, i) => {
+            const dot = prDot(statuses[i])
+            return (
+              <Text key={pr.url}>
+                {i > 0 ? <Text dimColor>, </Text> : null}
+                <Text color={dot.color} dimColor={!dot.color}>{`${dot.glyph} `}</Text>
+                <Link href={pr.url}>{`${pr.repo}#${pr.number}`}</Link>
+              </Text>
+            )
+          })}
           {hidden > 0 ? <Text dimColor>{` (+${hidden} more)`}</Text> : null}
           <Text> </Text>
         </Text>
